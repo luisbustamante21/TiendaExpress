@@ -285,3 +285,30 @@ GET /api/orders/{id}/
 ```
 
 Retorna la información completa de un pedido específico.
+
+---
+
+# 📝 Decisiones de Diseño
+
+Durante el desarrollo de la prueba técnica prioricé la implementación completa de la funcionalidad tanto del **backend** como del **frontend**, procurando que el flujo principal de la aplicación funcionara de principio a fin: autenticación, consulta de productos, creación de pedidos y procesamiento asíncrono mediante Celery.
+
+Debido al tiempo disponible para la realización de la prueba, decidí dedicar un mayor esfuerzo a la arquitectura y la lógica de negocio, dejando en segundo plano aspectos relacionados con el diseño visual de la interfaz. Consideré más importante entregar una aplicación funcional, con una estructura clara y una separación adecuada de responsabilidades, que invertir tiempo en detalles estéticos.
+
+### Prioridades durante el desarrollo
+
+- Implementar correctamente la API REST con Django REST Framework.
+- Integrar PostgreSQL como base de datos.
+- Procesar pedidos de forma asíncrona utilizando Celery y RabbitMQ.
+- Desarrollar un frontend funcional que consumiera correctamente la API.
+- Mantener una estructura de código organizada y fácil de mantener.
+
+### ¿Qué mejoraría con más tiempo?
+
+Si dispusiera de más tiempo, realizaría principalmente las siguientes mejoras:
+
+- Mejorar la experiencia de usuario (UI/UX) con un diseño más moderno y responsive.
+- Incorporar pruebas unitarias e integrales para backend y frontend.
+- Agregar manejo de errores más detallado y mensajes de retroalimentación al usuario.
+- Implementar un sistema de notificaciones en tiempo real para reflejar el cambio de estado de los pedidos.
+- Optimizar algunos componentes del frontend para mejorar su reutilización y mantenibilidad.
+- Añadir documentación automática de la API mediante Swagger/OpenAPI.
