@@ -1,20 +1,26 @@
+import os
 from pathlib import Path
 from datetime import timedelta
+from dotenv import load_dotenv # 1. Importar load_dotenv
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# 2. Cargar las variables de entorno desde el archivo .env
+load_dotenv(BASE_DIR / '.env')
 
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-&n19zprozc7z$646jygjpw^cvwnirum42m-7pehtbm&(o3pbwq'
+# 3. Leer la SECRET_KEY del .env
+SECRET_KEY = os.environ.get('SECRET_KEY')
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# 4. Leer DEBUG del .env (lo convierte a booleano de forma segura)
+DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
 ALLOWED_HOSTS = []
-
 
 # Application definition
 
@@ -66,14 +72,15 @@ WSGI_APPLICATION = 'core.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
+# 5. Leer credenciales de la base de datos desde el .env
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'tiendaexpress_db',
-        'USER': 'postgres',
-        'PASSWORD': 'adminpassword',
-        'HOST': '127.0.0.1', # O 'localhost'
-        'PORT': '5433',
+        'NAME': os.environ.get('DB_NAME'),
+        'USER': os.environ.get('DB_USER'),
+        'PASSWORD': os.environ.get('DB_PASSWORD'),
+        'HOST': os.environ.get('DB_HOST', '127.0.0.1'), # Valor por defecto si no existe en el .env
+        'PORT': os.environ.get('DB_PORT', '5432'),      # Valor por defecto
     }
 }
 
@@ -147,6 +154,7 @@ CORS_ALLOWED_ORIGINS = [
 CORS_ALLOW_CREDENTIALS = True
 
 # Configuración de Celery (RabbitMQ)
-CELERY_BROKER_URL = 'amqp://guest:guest@localhost:5672//'
+# 6. Leer URL de Celery desde el .env
+CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL')
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
