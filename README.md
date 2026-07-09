@@ -226,17 +226,15 @@ http://localhost:5173/
 
 # 📝 Resumen del Desarrollo y Prioridades
 
-Durante el desarrollo, prioricé la funcionalidad de extremo a extremo (E2E) y la solidez arquitectónica sobre el diseño estético. El objetivo fue asegurar un flujo completo, limpio y escalable.
+Debido al tiempo disponible para la prueba, prioricé la funcionalidad integral y la solidez arquitectónica sobre el diseño estético, asegurando un flujo de trabajo completo de principio a fin.
 
-## Prioridades durante el desarrollo
+## Prioridades de Desarrollo
+* **Backend:** Implementación de API REST con Django REST Framework y PostgreSQL. *Nota: No creé una tabla de usuarios personalizada; utilicé `auth.User` nativo de Django para agilizar la autenticación.*
+* **Asincronía:** Integración de Celery y RabbitMQ para el procesamiento de pedidos en segundo plano.
+* **Frontend:** Interfaz funcional conectada a la API que maneja autenticación, navegación paginada y creación de pedidos.
 
-* **Backend & Base de Datos:** API robusta con Django REST Framework y PostgreSQL. **Nota:** No se implementó una tabla de usuarios personalizada; se utilizó el modelo nativo `auth.User` de Django para gestionar la autenticación de forma segura y eficiente.
-* **Procesamiento Asíncrono:** Implementación de Celery y RabbitMQ para gestionar el ciclo de vida de los pedidos sin bloqueos.
-* **Frontend:** Interfaz funcional integrada con la API, gestionando autenticación, paginación de productos y creación de pedidos.
-
-## ¿Qué mejoraría con más tiempo?
-
-* **UI/UX:** Diseño visual moderno, profesional y *responsive*.
-* **Testing:** Implementación de suite de pruebas unitarias e integrales para backend y frontend.
-* **Experiencia de usuario:** Notificaciones en tiempo real para el estado de los pedidos y mensajes de error más detallados.
-* **Documentación:** Generación automática de documentación de API mediante Swagger/OpenAPI.
+## Mejoras a Futuro
+* **UI/UX:** Desarrollo de un diseño visual más moderno y adaptativo (responsive).
+* **Testing:** Implementación de pruebas unitarias e integrales (backend y frontend).
+* **Feedback en tiempo real:** Implementación de notificaciones o actualizaciones automáticas del estado de los pedidos.
+* **Refactorización:** Optimización de componentes del frontend para mayor reutilización y mantenibilidad.
