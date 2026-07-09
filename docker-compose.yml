@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: tiendaexpress_db  
+      POSTGRES_USER: postgres        
+      POSTGRES_PASSWORD: adminpassword
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"   
+      - "15672:15672" 
+
+volumes:
+  postgres_data:
