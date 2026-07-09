@@ -11,6 +11,3 @@ class OrderItem(models.Model):
     class Meta:
         managed = False
         db_table = 'order_item'
-
-    def __str__(self):
-        return f"{self.quantity} x {self.product.name}"
