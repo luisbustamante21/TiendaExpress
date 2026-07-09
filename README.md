@@ -215,78 +215,14 @@ http://localhost:5173/
 
 # 🔗 Endpoints principales de la API
 
-## Autenticación
-
-### Login
-
-```http
-POST /api/auth/login/
-```
-
-Obtiene los tokens JWT (`access` y `refresh`).
-
----
-
-### Refresh Token
-
-```http
-POST /api/auth/refresh/
-```
-
-Genera un nuevo token de acceso.
-
----
-
-## Productos
-
-### Obtener productos
-
-```http
-GET /api/products/
-```
-
-Retorna el listado paginado de productos.
-
----
-
-## Pedidos (Orders)
-
-### Crear pedido
-
-```http
-POST /api/orders/
-```
-
-- Valida el stock.
-- Encola el procesamiento mediante Celery.
-
----
-
-### Listar pedidos
-
-```http
-GET /api/orders/
-```
-
-Lista los pedidos del usuario autenticado.
-
-Permite filtrar por estado:
-
-```http
-GET /api/orders/?status=PENDING
-```
-
----
-
-### Obtener detalle de un pedido
-
-```http
-GET /api/orders/{id}/
-```
-
-Retorna la información completa de un pedido específico.
-
----
+| Método | Endpoint | Descripción |
+|---------|----------|-------------|
+| **POST** | `/api/auth/login/` | Autentica al usuario y retorna los tokens JWT (`access` y `refresh`). |
+| **POST** | `/api/auth/refresh/` | Genera un nuevo token de acceso a partir del `refresh token`. |
+| **GET** | `/api/products/` | Obtiene el listado paginado de productos (10 elementos por página). |
+| **POST** | `/api/orders/` | Crea un nuevo pedido, valida el stock disponible y envía el procesamiento de forma asíncrona mediante Celery. |
+| **GET** | `/api/orders/` | Lista únicamente los pedidos del usuario autenticado. Permite filtrar por estado utilizando el parámetro `?status=PENDING`. |
+| **GET** | `/api/orders/{id}/` | Obtiene el detalle de un pedido específico perteneciente al usuario autenticado. |
 
 # 📝 Decisiones de Diseño
 
