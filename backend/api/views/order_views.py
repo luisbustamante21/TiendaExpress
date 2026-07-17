@@ -7,7 +7,11 @@ from api.models.order_item import OrderItem
 from api.models.product import Product
 from api.serializers.order_serializer import OrderSerializer
 from api.tasks import procesar_pago_async
+import logging
+import uuid
+from decimal import Decimal
 
+logger = logging.getLogger(__name__)
 
 class OrderViewSet(viewsets.ViewSet):
     permission_classes = [IsAuthenticated]
@@ -18,7 +22,7 @@ class OrderViewSet(viewsets.ViewSet):
         """
         try:
             status_param = request.query_params.get('status')
-            # Filtramos por el usuario autenticado (asumiendo que request.user está configurado)
+            # filtrar por el usuario autenticado
             queryset = Order.objects.filter(user=request.user)
 
             if status_param:
@@ -27,7 +31,9 @@ class OrderViewSet(viewsets.ViewSet):
             serializer = OrderSerializer(queryset, many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Exception as e:
-            return Response({"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            logger.error(f"Error al listar pedidos del usuario {request.user.id}: {str(e)}")
+            return Response({"detail": "Error interno al obtener los pedidos."},
+                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     def retrieve(self, request, pk=None):
         """
@@ -40,78 +46,77 @@ class OrderViewSet(viewsets.ViewSet):
         except Order.DoesNotExist:
             return Response({"detail": "Pedido no encontrado."}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
-            return Response({"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            logger.error(f"Error al recuperar el pedido {pk}: {str(e)}")
+            return Response({"detail": "Error interno al cargar el pedido."},
+                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @transaction.atomic
     def create(self, request):
-        """
-        Crea un pedido, valida stock (evitando oversell) y deja el estado en PENDING.
-        """
+        trace_id = str(uuid.uuid4())
+        logger.info(f"[TraceID: {trace_id}] Iniciando creación de orden para el usuario {request.user.id}")
+
         try:
+            idem_key = request.headers.get('Idempotency-Key') or request.data.get('idempotency_key')
+            if idem_key:
+                existing_order = Order.objects.filter(idempotency_key=idem_key, user=request.user).first()
+                if existing_order:
+                    logger.info(f"[TraceID: {trace_id}] Petición duplicada detectada. Devolviendo orden existente.")
+                    return Response(OrderSerializer(existing_order).data, status=status.HTTP_200_OK)
+
             items_data = request.data.get('items', [])
             if not items_data:
                 return Response({"detail": "El pedido debe contener al menos un producto."},
                                 status=status.HTTP_400_BAD_REQUEST)
 
-            # BUENA PRÁCTICA: Ordenar los items por ID de producto antes de bloquear.
-            # Esto evita "deadlocks" si dos peticiones intentan comprar los mismos
-            # productos en distinto orden.
             items_data = sorted(items_data, key=lambda x: x.get('product_id'))
-
             products_to_buy = []
+            total_amount = Decimal('0.00')
 
-            # 1. Validar y bloquear stock de todos los productos ANTES de crear la orden
             for item in items_data:
                 product_id = item.get('product_id')
                 quantity = int(item.get('quantity', 0))
 
                 try:
-                    # SELECT FOR UPDATE: Bloquea la fila en la BD hasta que termine el @transaction.atomic
                     product = Product.objects.select_for_update().get(pk=product_id)
                 except Product.DoesNotExist:
-                    return Response({"detail": f"El producto con ID {product_id} no existe."},
+                    return Response({"detail": f"Producto ID {product_id} no existe."},
                                     status=status.HTTP_404_NOT_FOUND)
 
                 if product.stock_quantity < quantity:
-                    return Response({
-                        "detail": f"Stock insuficiente para '{product.name}'. Disponible: {product.stock_quantity}"
-                    }, status=status.HTTP_400_BAD_REQUEST)
+                    return Response({"detail": f"Stock insuficiente para '{product.name}'."},
+                                    status=status.HTTP_400_BAD_REQUEST)
 
-                # Descontamos el stock de una vez como "reserva" para que el select_for_update tenga efecto real.
-                # Si el pago asíncrono falla luego, la tarea de Celery deberá sumar este stock de vuelta.
                 product.stock_quantity -= quantity
                 product.save()
 
+                subtotal = product.price * quantity
+                total_amount += subtotal
+
                 products_to_buy.append((product, quantity))
 
-            # 2. Crear la Orden (Estado PENDING)
+            # Crear Orden con el total y la llave de idempotencia
             order = Order.objects.create(
                 user=request.user,
-                status='PENDING'
+                status='PENDING',
+                total_amount=total_amount,
+                idempotency_key=idem_key
             )
 
-            # 3. Crear los OrderItems
-            order_items = []
-            for product, quantity in products_to_buy:
-                order_items.append(
-                    OrderItem(
-                        order=order,
-                        product=product,
-                        quantity=quantity,
-                        unit_price=product.price
-                    )
-                )
+            order_items = [
+                OrderItem(order=order, product=product, quantity=quantity, unit_price=product.price)
+                for product, quantity in products_to_buy
+            ]
             OrderItem.objects.bulk_create(order_items)
 
-            # 4. DISPARAR TAREA CELERY
-            procesar_pago_async.delay(order.id)
+            transaction.on_commit(lambda: procesar_pago_async.delay(order.id, trace_id))
 
-            serializer = OrderSerializer(order)
-            return Response({
-                "message": "Pedido creado correctamente y en proceso de validación.",
-                "order": serializer.data
-            }, status=status.HTTP_201_CREATED)
+            logger.info(f"[TraceID: {trace_id}] Orden {order.id} creada exitosamente. Esperando validación de pago.")
+            return Response(OrderSerializer(order).data, status=status.HTTP_201_CREATED)
 
         except Exception as e:
-            return Response({"detail": f"Error al procesar el pedido: {str(e)}"},
-                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            # TEMA 5: Information Exposure. Evitamos enviar 'str(e)' al frontend.
+            logger.error(f"[TraceID: {trace_id}] Error crítico: {str(e)}", exc_info=True)
+            return Response(
+                {"detail": "Error interno del servidor al procesar el pedido. Intente nuevamente."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )

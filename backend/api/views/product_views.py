@@ -4,7 +4,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.pagination import PageNumberPagination
 from api.models.product import Product
 from api.serializers.product_serializer import ProductSerializer
-
+import logging
+logger = logging.getLogger(__name__)
 
 class ProductPagination(PageNumberPagination):
     page_size = 10
@@ -31,5 +32,6 @@ class ProductViewSet(viewsets.ViewSet):
             return Response(serializer.data, status=status.HTTP_200_OK)
 
         except Exception as e:
-            return Response({"detail": f"Error al obtener productos: {str(e)}"},
+            logger.error(f"Error al listar productos: {str(e)}")
+            return Response({"detail": "Error interno al cargar el catálogo de productos."},
                             status=status.HTTP_500_INTERNAL_SERVER_ERROR)

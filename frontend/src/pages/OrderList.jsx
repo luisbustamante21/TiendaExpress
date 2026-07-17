@@ -6,14 +6,11 @@ const OrderList = () => {
     const [loading, setLoading] = useState(true);
     const [statusFilter, setStatusFilter] = useState('');
 
-    // Estados para el detalle del pedido individual (GET /api/orders/{id}/)
     const [selectedOrder, setSelectedOrder] = useState(null);
     const [loadingDetail, setLoadingDetail] = useState(false);
 
-    // Estado técnico para forzar el refresco del listado
     const [refreshTrigger, setRefreshTrigger] = useState(0);
 
-    // Carga de la lista general (Manejado de forma segura para ESLint)
     useEffect(() => {
         const fetchOrdersData = async () => {
             setLoading(true);
@@ -35,7 +32,6 @@ const OrderList = () => {
         setRefreshTrigger(prev => prev + 1);
     };
 
-    // Función que consume el endpoint de detalle al hacer clic
     const handleViewDetail = async (id) => {
         setLoadingDetail(true);
         try {
@@ -50,25 +46,37 @@ const OrderList = () => {
     };
 
     const getStatusBadge = (status) => {
-        const styles = {
-            padding: '0.25rem 0.75rem', borderRadius: '9999px', fontSize: '0.875rem', fontWeight: 'bold'
+        const baseStyles = {
+            padding: '0.35rem 0.85rem',
+            borderRadius: '9999px',
+            fontSize: '0.75rem',
+            fontWeight: '700',
+            letterSpacing: '0.5px',
+            textTransform: 'uppercase',
+            display: 'inline-block'
         };
-        if (status === 'PENDING') return <span style={{ ...styles, backgroundColor: '#fef08a', color: '#854d0e' }}>Pendiente</span>;
-        if (status === 'CONFIRMED') return <span style={{ ...styles, backgroundColor: '#bbf7d0', color: '#166534' }}>Confirmado</span>;
-        if (status === 'FAILED') return <span style={{ ...styles, backgroundColor: '#fecaca', color: '#991b1b' }}>Fallido</span>;
-        return <span>{status}</span>;
+
+        if (status === 'PENDING') return <span style={{ ...baseStyles, backgroundColor: '#FEF3C7', color: '#92400E' }}>Pendiente</span>;
+        if (status === 'CONFIRMED') return <span style={{ ...baseStyles, backgroundColor: '#D1FAE5', color: '#065F46' }}>Confirmado</span>;
+        if (status === 'FAILED') return <span style={{ ...baseStyles, backgroundColor: '#FEE2E2', color: '#991B1B' }}>Fallido</span>;
+        return <span style={{ ...baseStyles, backgroundColor: '#F1F5F9', color: '#475569' }}>{status}</span>;
     };
 
     return (
-        <div style={{ position: 'relative' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                <h2>Mis Pedidos</h2>
+        <div style={{ position: 'relative', fontFamily: "'Inter', system-ui, sans-serif" }}>
+
+            {/* Cabecera de la sección */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
+                <div>
+                    <h2 style={{ margin: 0, fontSize: '1.75rem', color: '#2B2D42', fontWeight: '800', letterSpacing: '-0.5px' }}>Mis Pedidos</h2>
+                    <p style={{ margin: '0.25rem 0 0 0', color: '#8D99AE', fontSize: '0.95rem' }}>Gestiona y visualiza el estado de tus compras</p>
+                </div>
 
                 <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
                     <select
                         value={statusFilter}
                         onChange={(e) => setStatusFilter(e.target.value)}
-                        style={{ padding: '0.5rem', borderRadius: '4px', border: '1px solid #ccc' }}
+                        style={{ padding: '0.6rem 1rem', borderRadius: '8px', border: '1px solid #E2E8F0', backgroundColor: '#FFFFFF', color: '#2B2D42', outline: 'none', fontWeight: '500', fontSize: '0.9rem', cursor: 'pointer', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}
                     >
                         <option value="">Todos los estados</option>
                         <option value="PENDING">Pendientes</option>
@@ -78,89 +86,123 @@ const OrderList = () => {
 
                     <button
                         onClick={handleRefresh}
-                        style={{ padding: '0.5rem 1rem', backgroundColor: '#4f46e5', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                        style={{ padding: '0.6rem 1.25rem', backgroundColor: '#2B2D42', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', fontSize: '0.9rem', boxShadow: '0 4px 6px rgba(43, 45, 66, 0.15)', transition: 'background-color 0.2s' }}
                     >
-                        Refrescar Estado
+                        Refrescar
                     </button>
                 </div>
             </div>
 
-            {loading ? <p>Cargando pedidos...</p> : (
-                <table style={{ width: '100%', borderCollapse: 'collapse', backgroundColor: 'white', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-                    <thead style={{ backgroundColor: '#f3f4f6' }}>
-                        <tr>
-                            <th style={{ padding: '1rem', textAlign: 'left', borderBottom: '2px solid #e5e7eb' }}>ID Pedido</th>
-                            <th style={{ padding: '1rem', textAlign: 'left', borderBottom: '2px solid #e5e7eb' }}>Fecha</th>
-                            <th style={{ padding: '1rem', textAlign: 'left', borderBottom: '2px solid #e5e7eb' }}>Total</th>
-                            <th style={{ padding: '1rem', textAlign: 'center', borderBottom: '2px solid #e5e7eb' }}>Estado</th>
-                            <th style={{ padding: '1rem', textAlign: 'center', borderBottom: '2px solid #e5e7eb' }}>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {orders.length === 0 && (
-                            <tr><td colSpan="5" style={{ padding: '1rem', textAlign: 'center' }}>No se encontraron pedidos.</td></tr>
-                        )}
-                        {orders.map(order => {
-                            const total = order.items.reduce((sum, item) => sum + (item.quantity * parseFloat(item.unit_price)), 0);
-
-                            return (
-                                <tr key={order.id} style={{ borderBottom: '1px solid #e5e7eb' }}>
-                                    <td style={{ padding: '1rem' }}>#{order.id}</td>
-                                    <td style={{ padding: '1rem' }}>{new Date(order.created_at).toLocaleDateString()}</td>
-                                    <td style={{ padding: '1rem', fontWeight: 'bold' }}>${total.toFixed(2)}</td>
-                                    <td style={{ padding: '1rem', textAlign: 'center' }}>
-                                        {getStatusBadge(order.status)}
-                                    </td>
-                                    <td style={{ padding: '1rem', textAlign: 'center' }}>
-                                        <button
-                                            onClick={() => handleViewDetail(order.id)}
-                                            disabled={loadingDetail}
-                                            style={{ padding: '0.35rem 0.75rem', backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.875rem' }}
-                                        >
-                                            Ver Detalle
-                                        </button>
+            {/* Contenedor de la Tabla */}
+            {loading ? (
+                <div style={{ textAlign: 'center', padding: '3rem', color: '#8D99AE', fontWeight: '500' }}>
+                    Cargando pedidos...
+                </div>
+            ) : (
+                <div style={{ backgroundColor: 'white', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)', border: '1px solid #F1F5F9' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                        <thead style={{ backgroundColor: '#F8FAFC', borderBottom: '1px solid #E2E8F0' }}>
+                            <tr>
+                                <th style={{ padding: '1rem 1.5rem', textAlign: 'left', fontSize: '0.75rem', fontWeight: '700', color: '#8D99AE', textTransform: 'uppercase', letterSpacing: '0.05em' }}>ID Pedido</th>
+                                <th style={{ padding: '1rem 1.5rem', textAlign: 'left', fontSize: '0.75rem', fontWeight: '700', color: '#8D99AE', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Fecha</th>
+                                <th style={{ padding: '1rem 1.5rem', textAlign: 'left', fontSize: '0.75rem', fontWeight: '700', color: '#8D99AE', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total</th>
+                                <th style={{ padding: '1rem 1.5rem', textAlign: 'center', fontSize: '0.75rem', fontWeight: '700', color: '#8D99AE', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Estado</th>
+                                <th style={{ padding: '1rem 1.5rem', textAlign: 'center', fontSize: '0.75rem', fontWeight: '700', color: '#8D99AE', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {orders.length === 0 && (
+                                <tr>
+                                    <td colSpan="5" style={{ padding: '3rem 1rem', textAlign: 'center', color: '#8D99AE', fontSize: '0.95rem' }}>
+                                        No se encontraron pedidos con los filtros actuales.
                                     </td>
                                 </tr>
-                            );
-                        })}
-                    </tbody>
-                </table>
+                            )}
+                            {orders.map((order, index) => {
+                                const isLast = index === orders.length - 1;
+
+                                return (
+                                    <tr key={order.id} style={{ borderBottom: isLast ? 'none' : '1px solid #F1F5F9' }}>
+                                        <td style={{ padding: '1.25rem 1.5rem', color: '#2B2D42', fontWeight: '600', fontSize: '0.95rem' }}>
+                                            #{order.id}
+                                        </td>
+                                        <td style={{ padding: '1.25rem 1.5rem', color: '#4A4E69', fontSize: '0.95rem' }}>
+                                            {new Date(order.created_at).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
+                                        </td>
+                                        <td style={{ padding: '1.25rem 1.5rem', color: '#2B2D42', fontWeight: '700', fontSize: '0.95rem' }}>
+                                            ${parseFloat(order.total_amount).toFixed(2)}
+                                        </td>
+                                        <td style={{ padding: '1.25rem 1.5rem', textAlign: 'center' }}>
+                                            {getStatusBadge(order.status)}
+                                        </td>
+                                        <td style={{ padding: '1.25rem 1.5rem', textAlign: 'center' }}>
+                                            <button
+                                                onClick={() => handleViewDetail(order.id)}
+                                                disabled={loadingDetail}
+                                                style={{ padding: '0.5rem 1rem', backgroundColor: '#F8FAFC', color: '#2B2D42', border: '1px solid #E2E8F0', borderRadius: '6px', cursor: loadingDetail ? 'not-allowed' : 'pointer', fontSize: '0.85rem', fontWeight: '600', transition: 'all 0.2s' }}
+                                            >
+                                                Ver Detalle
+                                            </button>
+                                        </td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
+                </div>
             )}
 
             {/* MODAL DE DETALLE DEL PEDIDO (Renderizado condicional) */}
             {selectedOrder && (
-                <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
-                    <div style={{ background: 'white', padding: '2rem', borderRadius: '8px', width: '90%', maxWidth: '500px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid #e5e7eb', paddingBottom: '0.5rem' }}>
-                            <h3 style={{ margin: 0 }}>Detalle del Pedido #{selectedOrder.id}</h3>
+                <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(43, 45, 66, 0.6)', backdropFilter: 'blur(3px)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
+
+                    <div style={{ background: 'white', padding: '2.5rem', borderRadius: '16px', width: '90%', maxWidth: '500px', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)', maxHeight: '90vh', overflowY: 'auto' }}>
+
+                        {/* Cabecera del Modal */}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '2rem', borderBottom: '1px solid #E2E8F0', paddingBottom: '1.5rem' }}>
+                            <div>
+                                <h3 style={{ margin: '0 0 0.5rem 0', color: '#2B2D42', fontSize: '1.4rem', fontWeight: '800' }}>
+                                    Pedido #{selectedOrder.id}
+                                </h3>
+                                <p style={{ margin: 0, color: '#8D99AE', fontSize: '0.85rem' }}>
+                                    {new Date(selectedOrder.created_at).toLocaleString()}
+                                </p>
+                            </div>
                             {getStatusBadge(selectedOrder.status)}
                         </div>
 
-                        <p><strong>Fecha de Creación:</strong> {new Date(selectedOrder.created_at).toLocaleString()}</p>
-
-                        <h4 style={{ marginBottom: '0.5rem' }}>Ítems Comprados:</h4>
-                        <ul style={{ paddingLeft: '1.25rem', marginBottom: '1.5rem' }}>
+                        {/* Lista de Ítems */}
+                        <h4 style={{ margin: '0 0 1rem 0', color: '#2B2D42', fontSize: '1rem' }}>Artículos comprados</h4>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '2rem' }}>
                             {selectedOrder.items?.map(item => (
-                                <li key={item.id} style={{ marginBottom: '0.25rem' }}>
-                                    Producto ID: {item.product} — <strong>{item.quantity} x ${parseFloat(item.unit_price).toFixed(2)}</strong>
-                                </li>
+                                <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', backgroundColor: '#F8FAFC', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+                                    <div>
+                                        <p style={{ margin: 0, color: '#2B2D42', fontWeight: '600', fontSize: '0.9rem' }}>Producto ID: {item.product}</p>
+                                        <p style={{ margin: '0.25rem 0 0 0', color: '#8D99AE', fontSize: '0.8rem' }}>Cantidad: {item.quantity}</p>
+                                    </div>
+                                    <div style={{ fontWeight: '700', color: '#2B2D42' }}>
+                                        ${parseFloat(item.unit_price).toFixed(2)}
+                                    </div>
+                                </div>
                             ))}
-                        </ul>
+                        </div>
 
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #e5e7eb', paddingTop: '1rem' }}>
-                            <div>
-                                <span style={{ fontSize: '1.1rem', fontWeight: 'bold' }}>Total: </span>
-                                <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#10b981' }}>
-                                    ${selectedOrder.items?.reduce((sum, item) => sum + (item.quantity * parseFloat(item.unit_price)), 0).toFixed(2)}
+                        {/* Pie del Modal (Total y Botón) */}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #E2E8F0', paddingTop: '1.5rem' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <span style={{ fontSize: '0.85rem', color: '#8D99AE', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: '600' }}>Total a pagar</span>
+                                <span style={{ fontSize: '1.5rem', fontWeight: '800', color: '#F76C6C' }}>
+                                    ${parseFloat(selectedOrder.total_amount).toFixed(2)}
                                 </span>
                             </div>
                             <button
                                 onClick={() => setSelectedOrder(null)}
-                                style={{ padding: '0.5rem 1rem', backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                                style={{ padding: '0.75rem 2rem', backgroundColor: '#F8FAFC', color: '#2B2D42', border: '1px solid #E2E8F0', borderRadius: '8px', cursor: 'pointer', fontWeight: '700', fontSize: '0.95rem' }}
                             >
                                 Cerrar
                             </button>
                         </div>
+
                     </div>
                 </div>
             )}

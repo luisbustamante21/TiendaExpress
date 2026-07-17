@@ -3,24 +3,21 @@ import api from '../services/api';
 
 const AuthContext = createContext();
 
-// 1. Añadimos este comentario de ESLint para que ignore la advertencia de exportación múltiple
 // eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
-    const [isAuthenticated, setIsAuthenticated] = useState(() => !!localStorage.getItem('access_token'));
+    const [isAuthenticated, setIsAuthenticated] = useState(() => localStorage.getItem('is_logged_in') === 'true');
     const loading = false;
 
     const login = async (username, password) => {
         try {
-            const response = await api.post('/auth/login/', {
+            await api.post('/auth/login/', {
                 username,
                 password,
             });
 
-            localStorage.setItem('access_token', response.data.access);
-            localStorage.setItem('refresh_token', response.data.refresh);
-
+            localStorage.setItem('is_logged_in', 'true');
             setIsAuthenticated(true);
             return { success: true };
         } catch (error) {
@@ -32,10 +29,16 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    const logout = () => {
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('refresh_token');
-        setIsAuthenticated(false);
+    const logout = async () => {
+        try {
+            // se le pide al backend que destruya las cookies
+            await api.post('/auth/logout/');
+        } catch (err) {
+            console.error("Error al hacer logout en el backend", err);
+        } finally {
+            localStorage.removeItem('is_logged_in');
+            setIsAuthenticated(false);
+        }
     };
 
     return (

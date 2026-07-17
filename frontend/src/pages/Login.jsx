@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import loginIllustration from '../assets/images/login.png';
 
 const Login = () => {
     const [username, setUsername] = useState('');
@@ -26,7 +27,6 @@ const Login = () => {
         const result = await login(username, password);
 
         if (result.success) {
-            // Usamos { replace: true } para borrar el login del historial de navegación
             navigate('/orders', { replace: true });
         } else {
             setError(result.message);
@@ -35,46 +35,94 @@ const Login = () => {
     };
 
     return (
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', backgroundColor: '#f4f4f9' }}>
-            <div style={{ padding: '2rem', background: 'white', borderRadius: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', width: '100%', maxWidth: '400px' }}>
-                <h2 style={{ textAlign: 'center', marginBottom: '1.5rem', color: '#333' }}>Iniciar Sesión</h2>
+        <div style={{ display: 'flex', minHeight: '100vh', width: '100%', fontFamily: "'Inter', system-ui, sans-serif", backgroundColor: '#FFFFFF' }}>
 
-                {error && (
-                    <div style={{ background: '#fee2e2', color: '#991b1b', padding: '0.75rem', borderRadius: '4px', marginBottom: '1rem', fontSize: '0.875rem' }}>
-                        {error}
-                    </div>
-                )}
+            {/* Columna Izquierda - Formulario */}
+            <div style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '2rem' }}>
+                <div style={{ width: '100%', maxWidth: '380px' }}>
 
-                <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                    <div>
-                        <label style={{ display: 'block', marginBottom: '0.5rem', color: '#555' }}>Usuario</label>
-                        <input
-                            type="text"
-                            value={username}
-                            onChange={(e) => setUsername(e.target.value)}
-                            style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ccc', boxSizing: 'border-box' }}
-                            required
-                        />
+                    <div style={{ color: '#F27A59', fontWeight: 'bold', fontSize: '1.2rem', marginBottom: '3rem' }}>
+                        TiendaExpress
                     </div>
-                    <div>
-                        <label style={{ display: 'block', marginBottom: '0.5rem', color: '#555' }}>Contraseña</label>
-                        <input
-                            type="password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ccc', boxSizing: 'border-box' }}
-                            required
-                        />
+
+                    <div style={{ marginBottom: '2.5rem' }}>
+                        <p style={{ margin: '0 0 0.5rem 0', color: '#A0AEC0', fontSize: '0.85rem' }}>
+                            ¡Bienvenido de nuevo!
+                        </p>
+                        <h1 style={{ margin: 0, fontSize: '2.5rem', color: '#000000', fontWeight: 'bold', letterSpacing: '-1px' }}>
+                            Iniciar sesión
+                        </h1>
                     </div>
-                    <button
-                        type="submit"
-                        disabled={isLoading}
-                        style={{ padding: '0.75rem', backgroundColor: '#646cff', color: 'white', border: 'none', borderRadius: '4px', cursor: isLoading ? 'not-allowed' : 'pointer', fontWeight: 'bold', marginTop: '1rem' }}
-                    >
-                        {isLoading ? 'Cargando...' : 'Entrar'}
-                    </button>
-                </form>
+
+                    {error && (
+                        <div style={{ background: '#FFF0F0', color: '#D00000', padding: '0.8rem', borderRadius: '8px', marginBottom: '1.5rem', fontSize: '0.85rem', fontWeight: '500' }}>
+                            {error}
+                        </div>
+                    )}
+
+                    <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                        <div>
+                            <label style={{ display: 'block', marginBottom: '0.5rem', color: '#000000', fontSize: '0.85rem' }}>
+                                Usuario
+                            </label>
+                            <input
+                                type="text"
+                                value={username}
+                                onChange={(e) => setUsername(e.target.value)}
+                                placeholder="Ej. administrador"
+                                style={{ width: '100%', padding: '0.85rem 1rem', borderRadius: '6px', border: 'none', backgroundColor: '#FCF3F1', color: '#000000', fontSize: '0.9rem', boxSizing: 'border-box', outline: 'none' }}
+                                required
+                            />
+                        </div>
+
+                        <div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                                <label style={{ color: '#000000', fontSize: '0.85rem' }}>
+                                    Contraseña
+                                </label>
+                                <span style={{ color: '#A0AEC0', fontSize: '0.75rem', cursor: 'pointer' }}>
+                                    ¿Olvidaste tu contraseña?
+                                </span>
+                            </div>
+                            <input
+                                type="password"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                placeholder="••••••••"
+                                style={{ width: '100%', padding: '0.85rem 1rem', borderRadius: '6px', border: 'none', backgroundColor: '#FCF3F1', color: '#000000', fontSize: '0.9rem', boxSizing: 'border-box', outline: 'none' }}
+                                required
+                            />
+                        </div>
+
+                        <div style={{ textAlign: 'center', marginTop: '1rem' }}>
+                            <button
+                                type="submit"
+                                disabled={isLoading}
+                                style={{ padding: '0.7rem 2.5rem', backgroundColor: isLoading ? '#FFA8A8' : '#F27A59', color: 'white', border: 'none', borderRadius: '9999px', cursor: isLoading ? 'not-allowed' : 'pointer', fontWeight: '600', fontSize: '0.85rem', letterSpacing: '0.5px' }}
+                            >
+                                {isLoading ? 'CARGANDO...' : 'ENTRAR →'}
+                            </button>
+                        </div>
+                    </form>
+
+                    <div style={{ textAlign: 'center', marginTop: '2.5rem', fontSize: '0.85rem', color: '#A0AEC0' }}>
+                        ¿No tienes una cuenta? <span style={{ color: '#F27A59', cursor: 'pointer' }}>Regístrate</span>
+                    </div>
+                </div>
             </div>
+
+            <div style={{ flex: 1, backgroundColor: '#FEF1E9', display: 'flex', justifyContent: 'center', alignItems: 'center', position: 'relative' }}>
+                <img
+                    src={loginIllustration}
+                    alt="Ilustración de carrito de compras"
+                    style={{
+                        maxWidth: '85%',
+                        height: 'auto',
+                        objectFit: 'contain'
+                    }}
+                />
+            </div>
+
         </div>
     );
 };

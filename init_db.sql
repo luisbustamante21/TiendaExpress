@@ -11,14 +11,16 @@ CREATE TABLE product (
     stock_quantity INTEGER NOT NULL
 );
 
--- Tabla ORDER (Apuntando a la tabla interna auth_user de Django)
+-- Tabla ORDER (Sincronizada con el modelo Django)
 CREATE TABLE orders (
     id BIGSERIAL PRIMARY KEY,
-    -- NOTA: Django 4/5 suele usar BIGINT para los IDs nativos
     user_id BIGINT NOT NULL, 
     status VARCHAR(50) NOT NULL,
+    total_amount DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
+    idempotency_key VARCHAR(255) NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_order_user FOREIGN KEY (user_id) REFERENCES auth_user(id) ON DELETE CASCADE
+    CONSTRAINT fk_order_user FOREIGN KEY (user_id) REFERENCES auth_user(id) ON DELETE CASCADE,
+    CONSTRAINT orders_idempotency_key_unique UNIQUE (idempotency_key)
 );
 
 -- Tabla ORDER_ITEM
@@ -37,9 +39,12 @@ CREATE TABLE order_item (
 -- ==========================================
 
 CREATE INDEX idx_orders_user_id ON orders(user_id);
+CREATE INDEX idx_orders_status ON orders(status);
+-- Índice explícito para búsquedas rápidas por llave de idempotencia
+CREATE INDEX idx_orders_idempotency_key ON orders(idempotency_key);
+
 CREATE INDEX idx_order_item_order_id ON order_item(order_id);
 CREATE INDEX idx_order_item_product_id ON order_item(product_id);
-CREATE INDEX idx_orders_status ON orders(status);
 
 -- ==========================================
 -- 3. INSERCIÓN DE DATOS INICIALES (Productos)

@@ -217,12 +217,31 @@ http://localhost:5173/
 
 | Método | Endpoint | Descripción |
 |---------|----------|-------------|
-| **POST** | `/api/auth/login/` | Autentica al usuario y retorna los tokens JWT (`access` y `refresh`). |
-| **POST** | `/api/auth/refresh/` | Genera un nuevo token de acceso a partir del `refresh token`. |
+| **POST** | `/api/auth/login/` | Autentica al usuario y establece las cookies seguras `access_token` y `refresh_token` (HttpOnly). |
+| **POST** | `/api/auth/refresh/` | Renueva el token de acceso leyendo la cookie de refresco de forma segura. |
+| **POST** | `/api/auth/logout/` | Destruye las cookies de sesión en el navegador. |
 | **GET** | `/api/products/` | Obtiene el listado paginado de productos (10 elementos por página). |
-| **POST** | `/api/orders/` | Crea un nuevo pedido, valida el stock disponible y envía el procesamiento de forma asíncrona mediante Celery. |
-| **GET** | `/api/orders/` | Lista únicamente los pedidos del usuario autenticado. Permite filtrar por estado utilizando el parámetro `?status=PENDING`. |
-| **GET** | `/api/orders/{id}/` | Obtiene el detalle de un pedido específico perteneciente al usuario autenticado. |
+| **POST** | `/api/orders/` | Crea un nuevo pedido utilizando Idempotency Keys, valida stock y procesa vía Celery. |
+| **GET** | `/api/orders/` | Lista los pedidos del usuario autenticado. Permite filtrar por estado (`?status=PENDING`). |
+| **GET** | `/api/orders/{id}/` | Obtiene el detalle específico de un pedido del usuario. |
+
+# 🛠️ Arquitectura, Resiliencia y Seguridad (Implementado)
+
+Para cumplir con estándares de nivel empresarial y resolver vulnerabilidades críticas, el proyecto incluye las siguientes mejoras técnicas listas para evaluación:
+
+### 🔒 Seguridad y Gestión de Estado (Tema 4 y 5)
+- **Mitigación XSS:** Se eliminó el almacenamiento de tokens en `localStorage`. La autenticación se maneja estrictamente mediante **Cookies HttpOnly, Secure y SameSite=Lax**. El frontend no tiene acceso por JS a las credenciales.
+- **Protección contra Exposición de Datos:** Se sanitizaron los bloques `except` en Django. Ningún error interno (`str(e)`) se envía al cliente en errores 500; se registran localmente en logs estructurados y el usuario recibe un mensaje genérico seguro.
+
+### ⚡ Concurrencia y Resiliencia (Tema 1, 3, 6 y 13)
+- **Evitación de Race Conditions:** El backend utiliza `transaction.on_commit()` para asegurar que Celery procese los pagos solo cuando los datos de la orden estén persistidos en la base de datos.
+- **Control de Thundering Herd:** El interceptor de Axios implementa una cola de promesas asíncronas y un candado (`isRefreshing`). Si múltiples peticiones fallan por expiración de token al mismo tiempo, solo una viaja al endpoint de `/refresh/` y las demás esperan su resolución.
+- **Garantía de Idempotencia:** El frontend genera un `Idempotency-Key` (UUID) único antes de enviar la orden. Si el usuario reintenta la petición por un fallo de red, el backend detecta el duplicado y evita cobros o procesamiento dobles.
+- **Consistencia Eventual (Saga Corto):** En caso de que la tarea asíncrona de Celery falle definitivamente al procesar el pago con la pasarela, se ejecuta un flujo de compensación que devuelve el stock reservado a los productos.
+
+### 🚀 Próximos Pasos de Infraestructura (Sugeridos para Roadmap)
+- **Dockerización Total:** Mover el servidor de desarrollo de Django y la app de React a contenedores en el `docker-compose.yml` utilizando *multi-stage builds* y usuarios no-root para producción.
+- **Proveedores de Identidad (SSO):** Migrar la autenticación local hacia una solución centralizada como Keycloak vía OAuth2/OIDC.
 
 # 📝 Resumen del Desarrollo y Prioridades
 
